@@ -20,18 +20,19 @@
 // Graph
 // -----
 
+template <typename T = int>
 class Graph {
     public:
         // --------
         // typedefs
         // --------
 
-        typedef int vertex_descriptor;  // fix!
-        typedef int edge_descriptor;    // fix!
+        typedef T vertex_descriptor;
+        typedef T edge_descriptor;
 
-        typedef int* vertex_iterator;    // fix!
-        typedef int* edge_iterator;      // fix!
-        typedef int* adjacency_iterator; // fix!
+        typedef T* vertex_iterator;
+        typedef T* edge_iterator;
+        typedef T* adjacency_iterator;
 
         typedef std::size_t vertices_size_type;
         typedef std::size_t edges_size_type;
@@ -42,13 +43,18 @@ class Graph {
         // --------
 
         /**
-         * <your documentation>
+         * add an edge between two given vertices
+         * @param v1 a vertex_descriptor
+         * @param v2 a vertex_descriptor
+         * @return a pair where first of the pair is the edge_descriptor added and second of the pair indicates whether the edge has been successfully added
          */
-        friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor, vertex_descriptor, Graph&) {
+        friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor v1, vertex_descriptor v2, Graph&) 
+        {
             // <your code>
             edge_descriptor ed;
             bool            b;
-            return std::make_pair(ed, b);}
+            return std::make_pair(ed, b);
+        }
 
         // ----------
         // add_vertex
