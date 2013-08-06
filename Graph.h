@@ -24,93 +24,58 @@
 
 class Graph {
 
-    //Vertex Class
-    class Vertex
-    {
-        public:
-
-            Graph _g; /*!< the graph the vertex belongs to */
-
-            std::size_t _id; /*!< id of the Vertex in the graph, each Vertex has unique id in different graph */
-            std::size_t _preceder_num; /*!< keep track of how many preceders (number of vertices that points to this vertex) the Vertex has */
-
-            std::map<std::size_t, Vertex> _targets; /*!< keep track of the adjacent vertices (vertices that this Vertex points to). Key is the id of the target */
-
-        /**
-         * constructor
-         * @param id the id of the vertex
-         * @param g the Graph the vertex belongs
-         */
-         Vertex(std::size_t id, Graph g) : _targets()
-         {
-            _id = id;
-            _g = g;
-            _preceder_num = 0;
-         }
-
-        /**
-         * == operator for Vertex
-         * @param lhs a Vertex
-         * @param rhs a Vertex
-         * @return a bool that indicates whether the Vertices are equal
-         */
-        friend bool operator == (const Vertex& lhs, const Vertex& rhs)
-        {
-            return (lhs._g == rhs._g) && (lhs._id == rhs._id);
-        }
-
-    };
-
-    //Edge Class
-    class Edge
-    {
-        public:
-
-            Graph _g; /*!< the graph the vertex belongs to */
-
-            std::size_t _source_id; /*!< id of the source vertex */
-            std::size_t _target_id; /*!< id of the target vertex */
-
-        /**
-         * constructor
-         * @param s the sourse Vertex
-         * @param t the target Vertex
-         * @param g the Graph the edge belongs
-         */
-         Edge(Vertex s, Vertex t, Graph g)
-         {
-            _g = g;
-            _source_id = s.id;
-            _target_id = t.id;
-         }
-
-        /**
-         * == operator for Edge
-         * @param lhs a Edge
-         * @param rhs a Edge
-         * @return a bool that indicates whether the Vertices are equal
-         */
-        friend bool operator == (const Edge& lhs, const Edge& rhs)
-        {
-            return (lhs._g == rhs._g) && (lhs._source_id == rhs._source_id) && (lhs._target_id == rhs._target_id);
-        }
-
-    };
-
     public:
         // --------
         // typedefs
         // --------
 
-        typedef Vertex vertex_descriptor;
-        typedef Edge edge_descriptor;
+        typedef std::size_t vertex_descriptor;
+        typedef EdgeDescriptor edge_descriptor;
 
-        typedef std::map::iterator vertex_iterator;
+        typedef std::unordered_set::iterator vertex_iterator;
         typedef std::unordered_set::iterator edge_iterator;
-        typedef std::map::iterator adjacency_iterator;
+        typedef std::unordered_set::iterator adjacency_iterator;
 
         typedef std::size_t vertices_size_type;
         typedef std::size_t edges_size_type;
+
+    //EdgeDescriptor Class
+    class EdgeDescriptor
+    {
+        public:
+
+            vertex_descriptor _source; /*!< source vertex_descriptor */
+            vertex_descriptor _target; /*!< target vertex_descriptor */
+
+        /**
+         * default constructor
+         */
+         EdgeDescriptor()
+         {}
+
+        /**
+         * constructor
+         * @param s the sourse vertex_descriptor
+         * @param t the target vertex_descriptor
+         */
+         EdgeDescriptor(vertex_descriptor s, vertex_descriptor t)
+         {
+            _source = s;
+            _target = t;
+         }
+
+        /**
+         * == operator for EdgeDescriptor
+         * @param lhs a EdgeDescriptor
+         * @param rhs a EdgeDescriptor
+         * @return a bool that indicates whether the EdgeDescriptors are equal
+         */
+        friend bool operator == (const EdgeDescriptor& lhs, const EdgeDescriptor& rhs)
+        {
+            return (lhs._source == rhs._source) && (lhs._target == rhs._target);
+        }
+
+    };
 
     public:
         // --------
@@ -118,24 +83,46 @@ class Graph {
         // --------
 
         /**
-         * possibly add an edge between two given vertices to the graph
+         * possibly add an edge_descriptor between two given vertex_descriptor to the graph
          * @param v1 a vertex_descriptor
          * @param v2 a vertex_descriptor
-         * @return a pair where first of the pair is the edge_descriptor added and second of the pair indicates whether the edge has been successfully added
+         * @return a pair where first of the pair is the edge_descriptor added and second of the pair indicates whether the EdgeDescriptor has been successfully added
          */
         friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor v1, vertex_descriptor v2, Graph& g) 
         {
-            Edge e(v1, v2, g);
+            edge_descriptor e(v1, v2);
 
-            //check if the edge exists in the graph
-            if(_edges.find(e) == _edges.end())
+            //check if the edge_descriptor exists in the graph
+            if(g._edges.find(e) == g._edges.end())
             {
-                _edges.insert(e); //add edge
-                return std::make_pair(ed, false);
+                //if the vertex_descriptors were not in the graph, add them to the graph. else, update the information only
+                if(g._vertices.find(v1) == g._vertices.end())
+                {
+                    g._vertices.insert(v1);
+                    g._targets.insert(v1, std::unordered_set<vertex_descriptor>());
+                    g._preceder_num.insert(v1, 0);
+                }
+                g._targets[v1].insert(v2); //add v1's adjacent vertex_descriptor (which is v2)
+                
+                if(g._vertices.find(v2) == g._vertices.end())
+                {
+                    g._vertices.insert(v2);
+                    g._targets.insert(v2, std::unordered_set<vertex_descriptor>());
+                    g._preceder_num.insert(v2, 1);
+                }
+                else
+                {
+
+                    ++(g._preceder_num[v2]);
+                }
+
+                g._edges.insert(e); //add edge_descriptor
+
+                return std::make_pair(e, true);
             }
             else
             {
-                return std::make_pair(ed, true);
+                return std::make_pair(e, false);
             }
         }
 
@@ -144,13 +131,16 @@ class Graph {
         // ----------
 
         /**
-         * add a vertex to the graph
-         * @param g the graph where vertex is added
-         * @return the vertex added
+         * add a vertex_descriptor to the graph
+         * @param g the graph where vertex_descriptor is added
+         * @return the vertex_descriptor added
          */
         friend vertex_descriptor add_vertex (Graph& g) 
         {
-            Vertex v(_vertex_id_counter++, g);
+            vertex_descriptor v(g._vertex_counter++);
+            g._vertices.insert(v);
+            g._targets.insert(v, std::unordered_set<vertex_descriptor>());
+            g._preceder_num(v, 0);
             return v;
         }
 
@@ -160,13 +150,13 @@ class Graph {
 
         /**
          * adjacent_vertices function
-         * @param v a Vertex
-         * @param g the graph where the vertex is
-         * @return a pair of adjacency_iterators, where the first iterator can travel to the second one the eventually visit all the adjacent vertices of the vertex
+         * @param v a vertex_descriptor
+         * @param g the graph where the vertex_descriptor is
+         * @return a pair of adjacency_iterators, where the first iterator can travel to the second one the eventually visit all the adjacent vertices of the vertex_descriptor
          */
         friend std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices (vertex_descriptor v, const Graph& g) 
         {
-            return std::make_pair(v._targets.begin(), v._targets.end());
+            return std::make_pair(g._targets[v].begin(), g._targets[v].end());
         }
 
         // ----
@@ -175,77 +165,95 @@ class Graph {
 
         /**
          * edge function
-         * @param v1 a Vertex
-         * @param v2 a Vertex
-         * @param g the graph where the vertex is
-         * @return a pair, where first is the edge between the vertices, second is a bool indicates whether the edge exists in the graph
+         * @param v1 a vertex_descriptor
+         * @param v2 a vertex_descriptor
+         * @param g the graph where the vertex_descriptor is
+         * @return a pair, where first is the edge_descriptor between the vertices, second is a bool indicates whether the edge_descriptor exists in the graph
          */
-        friend std::pair<edge_descriptor, bool> edge (vertex_descriptor v1, vertex_descriptor v1, const Graph& g) {
-            // <your code>
-            edge_descriptor ed;
-            bool            b;
-            return std::make_pair(ed, b);}
+        friend std::pair<edge_descriptor, bool> edge (vertex_descriptor v1, vertex_descriptor v1, const Graph& g) 
+        {
+            edge_descriptor e(v1, v2);
+            if(g._edges.find(e) == g._edges.end())
+            {
+                return std::make_pair(e, true);
+            }
+            else
+            {
+                return std::make_pair(e, false);
+            }
+        }
 
         // -----
         // edges
         // -----
 
         /**
-         * <your documentation>
+         * edges function
+         * @param g a Graph
+         * @return a pair of edge_iterator in which the first can travel to the second one the eventually visits all the edges in the given graph
          */
-        friend std::pair<edge_iterator, edge_iterator> edges (const Graph&) {
-            // <your code>
-            edge_iterator b;
-            edge_iterator e;
-            return std::make_pair(b, e);}
+        friend std::pair<edge_iterator, edge_iterator> edges (const Graph& g) 
+        {
+            return std::make_pair(g._edges.begin(), g._edges.end());
+        }
 
         // ---------
-        // num_edges
+        // num_edge
         // ---------
 
         /**
-         * <your documentation>
+         * num_edge function
+         * @param g a Graph
+         * @return the number of edges in the given graph
          */
-        friend edges_size_type num_edges (const Graph&) {
-            // <your code>
-            edges_size_type s;
-            return s;}
+        friend edges_size_type num_edge (const Graph& g) 
+        {
+            return g._edges.size();
+        }
 
         // ------------
         // num_vertices
         // ------------
 
         /**
-         * <your documentation>
+         * num_vertices function
+         * @param g a Graph
+         * @return the number of vertices in the given graph
          */
-        friend vertices_size_type num_vertices (const Graph&) {
-            // <your code>
-            vertices_size_type s;
-            return s;}
+        friend vertices_size_type num_vertices (const Graph& g) 
+        {
+
+        }
 
         // ------
         // source
         // ------
 
         /**
-         * <your documentation>
+         * source function
+         * @param r an edge_descriptor
+         * @param g a Graph
+         * @return the source vertex_descriptor of a given edge_descriptor in the given graph
          */
-        friend vertex_descriptor source (edge_descriptor, const Graph&) {
-            // <your code>
-            vertex_descriptor v;
-            return v;}
+        friend vertex_descriptor source (edge_descriptor e, const Graph& g) 
+        {
+            g._edges.find(e)._source;
+        }
 
         // ------
         // target
         // ------
 
         /**
-         * <your documentation>
+         * target function
+         * @param r an edge_descriptor
+         * @param g a Graph
+         * @return the target vertex_descriptor of a given edge_descriptor in the given graph
          */
-        friend vertex_descriptor target (edge_descriptor, const Graph&) {
-            // <your code>
-            vertex_descriptor v;
-            return v;}
+        friend vertex_descriptor target (edge_descriptor e, const Graph&) 
+        {
+            g._edges.find(e)._target;
+        }
 
         // ------
         // vertex
@@ -254,10 +262,10 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend vertex_descriptor vertex (vertices_size_type, const Graph&) {
-            // <your code>
-            vertex_descriptor vd;
-            return vd;}
+        friend vertex_descriptor vertex (vertices_size_type id, const Graph& v) 
+        {
+            
+        }
 
         // --------
         // vertices
@@ -266,22 +274,23 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend std::pair<vertex_iterator, vertex_iterator> vertices (const Graph&) {
-            // <your code>
-            vertex_iterator b = vertex_iterator();
-            vertex_iterator e = vertex_iterator();
-            return std::make_pair(b, e);}
+        friend std::pair<vertex_descriptor_iterator, vertex_descriptor_iterator> vertices (const Graph&) 
+        {
+            return std::make_pair(b, e);
+        }
 
     private:
         // ----
         // data
         // ----
 
-        std::size_t _vertex_id_counter; /*!< used to assign the id of vertices in the graph */
-        std::size_t _edge_id_counter; /*!< used to assign the id of edges in the graph */
+        std::vertex_descriptor _vertex_counter; /*!< used to assign the vertex_descriptor in the graph */
 
-        std::map<std::size_t, Vertex> _vertices; /*!< container of the vertices, where the key is the id of vertex */
-        std::unordered_set<Edge> _edges; /*!< container of the edges */
+        std::unordered_set<vertex_descriptor> _vertices; /*!< container of the vertices*/
+        std::unordered_set<edge_descriptor> _edges; /*!< container of the EdgeDescriptors */
+
+        std::map<vertex_descriptor, std::size_t> _preceder_num; /*!< keep track of how many preceders (number of vertex_descriptors that points to vertex_descriptor) the vertex_descriptors have (Key is the vertex_descriptor)*/
+        std::map<vertex_descriptor, std::unordered_set<vertex_descriptor> > _targets; /*!< keep track of the adjacent vertices (vertex_descriptor that vertex_descriptors points to). Key is the vertex_descriptor that owns the adjacent vertex_descriptors*/
         
 
         // -----
