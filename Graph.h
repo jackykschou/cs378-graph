@@ -17,6 +17,7 @@
 #include <utility> // make_pair, pair
 #include <map>  // map
 #include <unordered_set>  // unordered set
+#include <iterator> //advance
 
 // -----
 // Graph
@@ -222,7 +223,7 @@ class Graph {
          */
         friend vertices_size_type num_vertices (const Graph& g) 
         {
-
+            return g._vertices.size();
         }
 
         // ------
@@ -246,7 +247,7 @@ class Graph {
 
         /**
          * target function
-         * @param r an edge_descriptor
+         * @param e an edge_descriptor
          * @param g a Graph
          * @return the target vertex_descriptor of a given edge_descriptor in the given graph
          */
@@ -260,11 +261,16 @@ class Graph {
         // ------
 
         /**
-         * <your documentation>
+         * vertex function
+         * @param nth integral value represents the n term index of the vertex
+         * @param g a Graph
+         * @return the nth vertex_descriptor of the graph
          */
-        friend vertex_descriptor vertex (vertices_size_type id, const Graph& v) 
+        friend vertex_descriptor vertex (vertices_size_type nth, const Graph& g) 
         {
-            
+            vertex_iterator b = g._vertices.begin();
+            std::advance(b, nth);
+            return *b;
         }
 
         // --------
@@ -272,11 +278,13 @@ class Graph {
         // --------
 
         /**
-         * <your documentation>
+         * vertices function
+         * @param g a Graph
+         * @return a pair of vertex_iterator in which the first can travel to the second one the eventually visits all the vertices in the given graph
          */
-        friend std::pair<vertex_descriptor_iterator, vertex_descriptor_iterator> vertices (const Graph&) 
+        friend std::pair<vertex_iterator, vertex_iterator> vertices (const Graph& g) 
         {
-            return std::make_pair(b, e);
+            return std::make_pair(g._vertices.begin(), g._vertices.end());
         }
 
     private:
@@ -298,11 +306,13 @@ class Graph {
         // -----
 
         /**
-         * <your documentation>
+         * valid function
          */
-        bool valid () const {
+        bool valid () const 
+        {
             // <your code>
-            return true;}
+            return true;
+        }
 
     public:
         // ------------
@@ -310,11 +320,11 @@ class Graph {
         // ------------
 
         /**
-         * <your documentation>
+         *  default constructor
          */
-        Graph () 
+        Graph () : _vertices(), _edges(), _preceder_num(), _targets()
         {
-
+            _vertex_counter = 0;
             assert(valid());
         }
 
@@ -331,11 +341,14 @@ class Graph {
 /**
  * depth-first traversal
  * three colors
- * <your documentation>
+ * @param g a Graph
+ * @return bool indicates whether the graph is cyclic
  */
 template <typename G>
-bool has_cycle (const G& g) {
-    return true;}
+bool has_cycle (const G& g) 
+{
+    return true;
+}
 
 // ----------------
 // topological_sort
@@ -344,16 +357,15 @@ bool has_cycle (const G& g) {
 /**
  * depth-first traversal
  * two colors
- * <your documentation>
+ * performs a topological sort on a graph and stream the outoput to an output iterator
+ * @param g a Graph
+ * @param x an output iteration
  * @throws Boost's not_a_dag exception if has_cycle()
  */
 template <typename G, typename OI>
-void topological_sort (const G& g, OI x) {
-    *x = 2;
-    ++x;
-    *x = 0;
-    ++x;
-    *x = 1;
-    }
+void topological_sort (const G& g, OI x) 
+{
+    
+}
 
 #endif // Graph_h
