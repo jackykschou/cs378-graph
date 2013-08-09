@@ -6,18 +6,7 @@
 
 /*
 To test the program:
-    % ls /usr/include/cppunit/
-    ...
-    HelperMacros.h
-    ...
-    % locate libcppunit.a
-    /usr/lib/libcppunit.a
-    % ls /public/linux/include/boost-1_44/boost/graph/
-    ...
-    adjacency_list.hpp
-    ...
-    % g++ -ansi -pedantic -I/public/linux/include/boost-1_44 -lcppunit -ldl -Wall TestGraph.c++ -o TestGraph.app
-    % valgrind TestGraph.app >& TestGraph.c++.out
+    g++ -pedantic -std=c++0x -Wall Graph.h TestGraph.c++ -o TestGraph -lgtest -lpthread -lgtest_main
 */
 
 // --------
@@ -30,7 +19,7 @@ To test the program:
 #include <utility>  // pair
 
 #include "boost/graph/adjacency_list.hpp"  // adjacency_list
-#include "boost/graph/topological_sort.hpp"// topological_sort
+//#include "boost/graph/topological_sort.hpp"// topological_sort use the sort in Graph.h
 
 #include "gtest/gtest.h" //g test
 
@@ -125,7 +114,7 @@ class TestGraph : public testing::Test
     }
 };
 
-typedef ::testing::Types< adjacency_list<setS, vecS, directedS> > MyTypes;
+typedef ::testing::Types< Graph > MyTypes;
 
 TYPED_TEST_CASE(TestGraph, MyTypes);
 
@@ -201,11 +190,13 @@ TYPED_TEST_CASE(TestGraph, MyTypes);
         ASSERT_TRUE(b != e);
         if (b != e) {
             typename TestFixture::edge_descriptor ed = *b;
-            ASSERT_TRUE(ed == this->edAB);}
+            ASSERT_TRUE(ed == this->edAB);
+        }
         ++b;
         if (b != e) {
             typename TestFixture::edge_descriptor ed = *b;
-            ASSERT_TRUE(ed == this->edAC);}
+            ASSERT_TRUE(ed == this->edAC);
+        }
     }
 
     // --------------
@@ -297,3 +288,4 @@ TYPED_TEST_CASE(TestGraph, MyTypes);
         topological_sort(this->g, std::ostream_iterator<typename TestFixture::vertex_descriptor>(out, " "));
         ASSERT_TRUE(out.str() == "2 0 1 ");
     }
+
