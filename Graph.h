@@ -16,8 +16,6 @@
 #include <cstddef> // size_t
 #include <utility> // make_pair, pair
 #include <deque>  // deque
-#include <unordered_map>  // unordered_map
-#include <unordered_set>  // unordered set
 #include <iterator>
 #include <algorithm> 
 #include "boost/graph/exception.hpp"// not_a_dag exception
@@ -65,7 +63,7 @@ class Graph
          */
         friend bool operator == (const EdgeDescriptor& lhs, const EdgeDescriptor& rhs)
         {
-            return true;
+            return (lhs._source == rhs._source) && (lhs._target == rhs._target);
         }
 
     };
@@ -78,7 +76,7 @@ class Graph
         typedef EdgeDescriptor edge_descriptor;
 
         typedef std::deque<vertex_descriptor>::iterator vertex_iterator;
-        typedef std::unordered_set<edge_descriptor>::iterator edge_iterator;
+        typedef std::deque<edge_descriptor>::iterator edge_iterator;
         typedef std::deque<vertex_descriptor>::iterator adjacency_iterator;
 
         typedef std::size_t vertices_size_type;
@@ -99,29 +97,29 @@ class Graph
         {
             edge_descriptor e(v1, v2);
             //check if the edge_descriptor exists in the graph
-            //if(g._edges.find(e) == g._edges.end())
+            if(std::find(g._edges.begin(), g._edges.end(), e) == g._edges.end())
             {
                 /* If the VertexList selector is vecS, and if either vertex descriptor u or v (which are integers) has a value greater than the current number of vertices in the graph, 
                 the graph is enlarged so that the number of vertices is std::max(u,v) + 1. */
-                /*if((v1 >= g._vertices.back()) || (v2 >=  g._vertices.back()))
+                if((v1 > g._vertices.back()) || (v2 >  g._vertices.back()))
                 {
                     vertices_size_type new_size = std::max(v1, v2) + 1;
                     g._vertices.resize(new_size);
+                    g._targets.resize(new_size);
                  }
 
-                g._targets[v1].push_back(v2); //add v1's adjacent vertex_descriptor (which is v2)
+                (g._targets[v1]).push_back(v2); //add v1's adjacent vertex_descriptor (which is v2)
 
-                g._edges.insert(e); //add edge_descriptor
+                g._edges.push_back(e); //add edge_descriptor
 
                 return std::make_pair(e, true);
-                */
+                
             }
-            //else
+            else
             {
-                //return std::make_pair(e, false);
+                return std::make_pair(e, false);
             }
             
-            return std::make_pair(e, true);
         }
 
         // ----------
@@ -135,7 +133,8 @@ class Graph
          */
         friend vertex_descriptor add_vertex (Graph& g) 
         {
-            g._vertices.push_back((g._vertices.size()) + 1);
+            g._vertices.push_back(g._vertices.size());
+            g._targets.push_back(std::deque<vertex_descriptor>());
             return g._vertices.back();
         }
 
@@ -152,8 +151,8 @@ class Graph
         friend std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices (vertex_descriptor v, const Graph& g) 
         {
             Graph& cg = const_cast<Graph&>(g);
-            adjacency_iterator b = ((cg._targets.find(v))->second).begin();
-            adjacency_iterator e = ((cg._targets.find(v))->second).end();
+            adjacency_iterator b = (cg._targets[v]).begin();
+            adjacency_iterator e = (cg._targets[v]).end();
             return std::make_pair(b, e);
         }
 
@@ -171,13 +170,13 @@ class Graph
         friend std::pair<edge_descriptor, bool> edge (vertex_descriptor v1, vertex_descriptor v2, const Graph& g) 
         {
             edge_descriptor e(v1, v2);
-            if(g._edges.find(e) == g._edges.end())
+            if(std::find(g._edges.begin(), g._edges.end(), e) == g._edges.end())
             {
-                return std::make_pair(e, true);
+                return std::make_pair(e, false);
             }
             else
             {
-                return std::make_pair(e, false);
+                return std::make_pair(e, true);
             }
         }
 
@@ -238,7 +237,7 @@ class Graph
          */
         friend vertex_descriptor source (edge_descriptor e, const Graph& g) 
         {
-            return (g._edges.find(e))->_source;
+            return std::find(g._edges.begin(), g._edges.end(), e)->_source;
         }
 
         // ------
@@ -253,7 +252,7 @@ class Graph
          */
         friend vertex_descriptor target (edge_descriptor e, const Graph& g) 
         {
-            return (g._edges.find(e))->_target;
+            return std::find(g._edges.begin(), g._edges.end(), e)->_target;
         }
 
         // ------
@@ -295,9 +294,9 @@ class Graph
 
         std::deque<vertex_descriptor> _vertices; /*!< container of the vertex_descriptors */
 
-        std::unordered_set<edge_descriptor> _edges; /*!< container of the edge_descriptors */
+        std::deque<edge_descriptor> _edges; /*!< container of the edge_descriptors */
 
-        std::unordered_map<vertex_descriptor, std::deque<vertex_descriptor> > _targets; /*!< keep track of the adjacent vertices (vertex_descriptor that vertex_descriptors points to). Key is the vertex_descriptor that owns the adjacent vertex_descriptors*/
+        std::deque< std::deque<vertex_descriptor> > _targets; /*!< keep track of the adjacent vertices*/
         
 
         // -----
@@ -339,6 +338,7 @@ class Graph
         // Graph  (const Graph<T>&);
         // ~Graph ();
         // Graph& operator = (const Graph&);
+
 };
 
 //helper function for has_cycle
@@ -491,6 +491,7 @@ void topological_sort (const G& g, OI x)
             else
             {
                 colors[current_vertex_index] = 2;
+                result.push_back(current_vertex_index);
                 if(!(stack_empty = s.empty()))
                 {
                     current_vertex = s.back();
@@ -503,8 +504,8 @@ void topological_sort (const G& g, OI x)
 
         while(!result.empty())
         {
-            *x = result.back();
-            result.pop_back();
+            *x = result.front();
+            result.pop_front();
             ++x;
         }
     }
